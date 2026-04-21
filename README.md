@@ -12,7 +12,7 @@ Concrete adapters use ESP-IDF APIs directly: `esp_http_client` for HTTP, POSIX f
 
 ```text
 lib_ota/src/
-  ungula_ota_lib.h              Umbrella header (triggers path discovery for Arduino .ino projects)
+  ungula_ota.h              Umbrella header (triggers path discovery for Arduino .ino projects)
   ota/
     core/                       Platform-independent interfaces and logic
       ota_types.h               OtaStatus enum, OtaProgressCallback, otaStatusToString()
@@ -280,7 +280,7 @@ cmake --build .
 ctest --output-on-failure
 ```
 
-CMake will download [ungula-lib](https://github.com/alexconesap/ungula-core.git)
+CMake will download [ungula-core](https://github.com/alexconesap/ungula-core.git)
 and [emblogx](https://github.com/alexconesap/emblogx.git) into the `vendor/`
 folder.
 
@@ -288,9 +288,9 @@ folder.
 
 | Library | Repo | Used for |
 | ------- | ---- | -------- |
-| UngulaCore | [ungula-lib](https://github.com/alexconesap/ungula-core.git) | `SystemControl::reboot()` (headers only, stub in tests) |
+| UngulaCore | [ungula-core](https://github.com/alexconesap/ungula-core.git) | `SystemControl::reboot()` (headers only, stub in tests) |
 | embLogX | [emblogx](https://github.com/alexconesap/emblogx.git) | Logging via `log_error()` |
-| UngulaNet | [lib_net](https://github.com/alexconesap/lib_net.git) | HTTP client backing `HttpOtaSource` (only when `ENABLE_OTA_HTTP` is set) |
+| UngulaNet | [ungula-net](https://github.com/alexconesap/ungula-net.git) | HTTP client backing `HttpOtaSource` (only when `ENABLE_OTA_HTTP` is set) |
 
 ESP-IDF component dependencies (part of the IDF SDK, no extra components needed):
 

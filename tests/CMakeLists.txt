@@ -15,7 +15,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(googletest)
 
 # ---------------------------------------------------------------------------
-# Dependencies: ungula-lib (headers only) and emblogx (headers + sources).
+# Dependencies: UngulaCore (headers only) and EmblogX (headers + sources).
 #
 # By default we use sibling directories (../../lib, ../../lib_emblogx) which
 # is the layout during local development. External consumers who cloned only
@@ -28,12 +28,12 @@ if(USE_LOCAL_DEPS)
     set(LIB_EMBLOGX_SRC ${CMAKE_CURRENT_LIST_DIR}/../../lib_emblogx/src)
 else()
     FetchContent_Declare(
-        ungula_lib
+        ungula_core
         GIT_REPOSITORY https://github.com/alexconesap/ungula-core.git
         GIT_TAG main
     )
-    FetchContent_MakeAvailable(ungula_lib)
-    set(LIB_SRC ${ungula_lib_SOURCE_DIR}/src)
+    FetchContent_MakeAvailable(ungula_core)
+    set(LIB_SRC ${ungula_core_SOURCE_DIR}/src)
 
     FetchContent_Declare(
         emblogx
