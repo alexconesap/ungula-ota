@@ -314,3 +314,24 @@ Thanks to Claude and ChatGPT for helping on generating this documentation.
 ## License
 
 MIT License — see [LICENSE](license.txt) file.
+
+---
+
+## Arduino CLI symlink note (rarely relevant)
+
+This library ships a flat forwarder header at `src/ungula_ota.h` that
+just `#include`s `ungula/ota.h`. `library.properties` `includes=` points
+at the forwarder.
+
+It only exists to work around an Arduino CLI quirk: when the library is
+consumed through a symlink, the CLI sometimes fails to discover headers
+nested under `src/ungula/`. The flat forwarder fixes that scan.
+
+**Host code keeps including the real header**:
+
+```cpp
+#include <ungula/ota.h>
+```
+
+PlatformIO, ESP-IDF component builds, and plain CMake setups can ignore
+the forwarder.

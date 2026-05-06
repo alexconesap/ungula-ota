@@ -11,7 +11,7 @@
 #include <emblogx/logger.h>
 #include <esp_crt_bundle.h>
 #include <esp_http_client.h>
-#include <wifi/wifi_sta.h>
+#include <ungula/net/wifi/wifi_sta.h>
 
 #include <cstdio>
 #include <cstring>
@@ -48,7 +48,7 @@ namespace ungula::ota {
     }
 
     bool EspHttpOtaSource::fetchVersion(char* out, size_t maxLen) {
-        if (!ungula::wifi::sta_is_connected()) {
+        if (!ungula::net::wifi::sta_is_connected()) {
             log_error("OTA HTTP: WiFi not connected");
             return false;
         }
@@ -104,7 +104,7 @@ namespace ungula::ota {
     // -- streamFirmware: GET {baseUrl}/{binFilename}, stream chunks via callback --
 
     bool EspHttpOtaSource::streamFirmware(OtaDataCallback callback, void* ctx) {
-        if (!ungula::wifi::sta_is_connected()) {
+        if (!ungula::net::wifi::sta_is_connected()) {
             log_error("OTA HTTP: WiFi not connected");
             return false;
         }
