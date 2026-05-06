@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <ota/core/ota_version.h>
+#include <ungula/ota/core/ota_version.h>
 
 using namespace ungula::ota;
 

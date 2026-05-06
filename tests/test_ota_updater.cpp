@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
-#include <ota/core/i_firmware_writer.h>
-#include <ota/core/i_ota_source.h>
-#include <ota/core/ota_updater.h>
+#include <ungula/ota/core/i_firmware_writer.h>
+#include <ungula/ota/core/i_ota_source.h>
+#include <ungula/ota/core/ota_updater.h>
 
 #include <cstring>
 #include <vector>

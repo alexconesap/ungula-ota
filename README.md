@@ -51,9 +51,9 @@ This is an Arduino-ESP32 macro that increases the loop task stack to 16 KB. With
 ## Quick Start — HTTP Update
 
 ```cpp
-#include <ota/core/ota_updater.h>
-#include <ota/sources/http/esp/http_ota_source.h>
-#include <ota/writers/esp32/idf/esp32_idf_firmware_writer.h>
+#include <ungula/ota/core/ota_updater.h>
+#include <ungula/ota/sources/http/esp/http_ota_source.h>
+#include <ungula/ota/writers/esp32/idf/esp32_idf_firmware_writer.h>
 
 using namespace ungula::ota;
 
@@ -81,7 +81,7 @@ The `EspHttpOtaSource` in `sources/http/esp/` is the primary HTTP source. It use
 ## Quick Start — SD Card
 
 ```cpp
-#include <ota/sources/sd/esp_idf_sd_ota_source.h>
+#include <ungula/ota/sources/sd/esp_idf_sd_ota_source.h>
 
 // SD must be mounted via VFS beforehand
 static EspIdfSdOtaSource source("/sdcard/firmware", "device.bin");
@@ -141,7 +141,7 @@ OTA: download 100% (1202496 / 1202496 bytes)
 Implement `IOtaSource` to pull firmware from somewhere else (BLE, MQTT, a custom protocol):
 
 ```cpp
-#include <ota/core/i_ota_source.h>
+#include <ungula/ota/core/i_ota_source.h>
 
 class BleOtaSource : public ungula::ota::IOtaSource {
 public:
@@ -177,7 +177,7 @@ private:
 Implement `IFirmwareWriter` for a different target (external flash, dual-bank, etc.):
 
 ```cpp
-#include <ota/core/i_firmware_writer.h>
+#include <ungula/ota/core/i_firmware_writer.h>
 
 class ExternalFlashWriter : public ungula::ota::IFirmwareWriter {
 public:

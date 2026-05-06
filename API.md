@@ -15,9 +15,9 @@ All examples assume `using namespace ungula::ota;`.
 ### Use case: HTTP/HTTPS update with auto-reboot
 
 ```cpp
-#include <ungula_ota.h>
-#include <ota/sources/http/esp/http_ota_source.h>
-#include <ota/writers/esp32/idf/esp32_idf_firmware_writer.h>
+#include <ungula/ota.h>
+#include <ungula/ota/sources/http/esp/http_ota_source.h>
+#include <ungula/ota/writers/esp32/idf/esp32_idf_firmware_writer.h>
 
 using namespace ungula::ota;
 
@@ -46,7 +46,7 @@ hosts `{baseUrl}/version.txt` and `{baseUrl}/{binFilename}`. Requires
 ### Use case: Check first, install later
 
 ```cpp
-#include <ungula_ota.h>
+#include <ungula/ota.h>
 
 using namespace ungula::ota;
 
@@ -70,7 +70,7 @@ into a maintenance window after detecting an update.
 ### Use case: Progress reporting
 
 ```cpp
-#include <ungula_ota.h>
+#include <ungula/ota.h>
 
 using namespace ungula::ota;
 
@@ -95,9 +95,9 @@ free functions are fine; capturing lambdas are not.
 ### Use case: SD card update
 
 ```cpp
-#include <ungula_ota.h>
-#include <ota/sources/sd/esp_idf_sd_ota_source.h>
-#include <ota/writers/esp32/idf/esp32_idf_firmware_writer.h>
+#include <ungula/ota.h>
+#include <ungula/ota/sources/sd/esp_idf_sd_ota_source.h>
+#include <ungula/ota/writers/esp32/idf/esp32_idf_firmware_writer.h>
 
 using namespace ungula::ota;
 
@@ -120,7 +120,7 @@ When to use this: offline / field updates from removable media. Requires
 ### Use case: Custom transport (implement IOtaSource)
 
 ```cpp
-#include <ungula_ota.h>
+#include <ungula/ota.h>
 #include <cstring>
 
 class MyOtaSource : public ungula::ota::IOtaSource {
@@ -157,7 +157,7 @@ firmware origin. The core never assumes a specific transport.
 ### Use case: Custom flash target (implement IFirmwareWriter)
 
 ```cpp
-#include <ungula_ota.h>
+#include <ungula/ota.h>
 
 class MyFlashWriter : public ungula::ota::IFirmwareWriter {
     public:
@@ -191,16 +191,16 @@ Header layout under `lib_ota/src/`:
 
 | Header | Public symbols |
 | --- | --- |
-| `ungula_ota.h` | Umbrella; pulls in everything below |
-| `ota/core/ota_types.h` | `OtaStatus`, `OtaProgressCallback`, `OtaProgressCallbackData`, `otaStatusToString()` |
-| `ota/core/i_ota_source.h` | `IOtaSource`, `OtaDataCallback` |
-| `ota/core/i_firmware_writer.h` | `IFirmwareWriter` |
-| `ota/core/ota_version.h` | `compareVersions()` |
-| `ota/core/ota_updater.h` | `OtaUpdater` (the facade) |
-| `ota/sources/http/esp/http_ota_source.h` | `EspHttpOtaSource`, alias `HttpOtaSource` |
-| `ota/sources/http/esp_idf_http_ota_source.h` | `EspIdfHttpOtaSource`, alias `IdfHttpOtaSource` (legacy) |
-| `ota/sources/sd/esp_idf_sd_ota_source.h` | `EspIdfSdOtaSource`, alias `IdfSdOtaSource` |
-| `ota/writers/esp32/idf/esp32_idf_firmware_writer.h` | `Esp32IdfFirmwareWriter`, alias `Esp32FirmwareWriter` |
+| `ungula/ota.h` | Umbrella; pulls in everything below |
+| `ungula/ota/core/ota_types.h` | `OtaStatus`, `OtaProgressCallback`, `OtaProgressCallbackData`, `otaStatusToString()` |
+| `ungula/ota/core/i_ota_source.h` | `IOtaSource`, `OtaDataCallback` |
+| `ungula/ota/core/i_firmware_writer.h` | `IFirmwareWriter` |
+| `ungula/ota/core/ota_version.h` | `compareVersions()` |
+| `ungula/ota/core/ota_updater.h` | `OtaUpdater` (the facade) |
+| `ungula/ota/sources/http/esp/http_ota_source.h` | `EspHttpOtaSource`, alias `HttpOtaSource` |
+| `ungula/ota/sources/http/esp_idf_http_ota_source.h` | `EspIdfHttpOtaSource`, alias `IdfHttpOtaSource` (legacy) |
+| `ungula/ota/sources/sd/esp_idf_sd_ota_source.h` | `EspIdfSdOtaSource`, alias `IdfSdOtaSource` |
+| `ungula/ota/writers/esp32/idf/esp32_idf_firmware_writer.h` | `Esp32IdfFirmwareWriter`, alias `Esp32FirmwareWriter` |
 
 All public symbols live in `ungula::ota`.
 
@@ -329,7 +329,7 @@ Required ordering:
    `BeginFailed`), the updater calls `writer.abort()` automatically.
    Custom writers must release resources there.
 4. On `Ok` with `autoReboot=true`, control does not return — the device
-   reboots ~500 ms later via `ungula::SystemControl::rebootAfterMs`.
+   reboots ~500 ms later via `ungula::core::system::SystemControl::rebootAfterMs`.
 
 Source and writer are not owned by `OtaUpdater`. Keep them alive (static
 storage is the typical pattern) for the duration of the update.

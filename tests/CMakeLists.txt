@@ -66,7 +66,7 @@ add_executable(test_ungula_ota
     test_ota_version.cpp
     test_ota_updater.cpp
     ArduinoStub/system_stub.cpp
-    ${LIB_OTA_SRC}/ota/core/ota_updater.cpp
+    ${LIB_OTA_SRC}/ungula/ota/core/ota_updater.cpp
     ${LIB_EMBLOGX_SRC}/emblogx/logger_core.cpp
     ${LIB_EMBLOGX_SRC}/emblogx/async_dispatcher.cpp
     ${LIB_EMBLOGX_SRC}/emblogx/sinks/console_sink.cpp
