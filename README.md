@@ -41,6 +41,8 @@ The HTTP OTA source needs significant stack space for TLS (the ESP-IDF HTTP clie
 **Arduino `.ino` projects only**: The Arduino framework runs `loop()` on a FreeRTOS task with a default stack of 8 KB, which is not enough. Add this macro at the top of your `.ino` file, **before** `setup()` or any other code:
 
 ```cpp
+#include <ungula/ota.h>
+
 SET_LOOP_TASK_STACK_SIZE(16384);
 ```
 
@@ -54,6 +56,7 @@ This is an Arduino-ESP32 macro that increases the loop task stack to 16 KB. With
 #include <ungula/ota/core/ota_updater.h>
 #include <ungula/ota/sources/http/esp/http_ota_source.h>
 #include <ungula/ota/writers/esp32/idf/esp32_idf_firmware_writer.h>
+#include <emblogx/logger.h>
 
 using namespace ungula::ota;
 
@@ -96,6 +99,9 @@ The SD source looks for `{basePath}/version.txt` and `{basePath}/{binFilename}`.
 If you want to show a prompt on a display before flashing:
 
 ```cpp
+#include <ungula/ota.h>
+#include <emblogx/logger.h>
+
 OtaStatus check = updater.checkForUpdate("1.0.3");
 if (check == OtaStatus::Ok) {
     displayMessage("Update available. Starting download...");
@@ -110,6 +116,9 @@ if (check == OtaStatus::Ok) {
 Track download progress. The callback fires for every 4 KB chunk written to flash. Use a threshold (e.g., every 10%) to avoid flooding the log output:
 
 ```cpp
+#include <ungula/ota.h>
+#include <emblogx/logger.h>
+
 updater.setProgressCallback([](size_t bytesWritten, size_t totalBytes) {
     if (totalBytes > 0) {
         int percent = static_cast<int>((bytesWritten * 100) / totalBytes);
