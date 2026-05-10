@@ -11,28 +11,29 @@
 
 #include "../../core/i_ota_source.h"
 
-namespace ungula::ota {
+namespace ungula::ota
+{
 
     /// OTA source that reads version.txt and firmware binary from an SD card
     /// using POSIX file I/O (the card must be mounted via VFS beforehand).
     class EspIdfSdOtaSource : public IOtaSource {
-        public:
-            /// @param basePath     VFS mount path + subdir, e.g. "/sdcard/firmware/icb"
-            /// @param binFilename  e.g. "ICB.ino.bin"
-            EspIdfSdOtaSource(const char* basePath, const char* binFilename);
+    public:
+        /// @param basePath     VFS mount path + subdir, e.g. "/sdcard/firmware/icb"
+        /// @param binFilename  e.g. "ICB.ino.bin"
+        EspIdfSdOtaSource(const char *basePath, const char *binFilename);
 
-            bool fetchVersion(char* out, size_t maxLen) override;
-            size_t getFirmwareSize() override;
-            bool streamFirmware(OtaDataCallback callback, void* ctx) override;
+        bool fetchVersion(char *out, size_t maxLen) override;
+        size_t getFirmwareSize() override;
+        bool streamFirmware(OtaDataCallback callback, void *ctx) override;
 
-        private:
-            const char* basePath_;
-            const char* binFilename_;
-            size_t firmwareSize_ = 0;
+    private:
+        const char *basePath_;
+        const char *binFilename_;
+        size_t firmwareSize_ = 0;
     };
 
     // Backward-compatible alias
     using IdfSdOtaSource = EspIdfSdOtaSource;
 
-}  // namespace ungula::ota
-#endif  // ENABLE_OTA_SD && ESP_PLATFORM
+} // namespace ungula::ota
+#endif // ENABLE_OTA_SD && ESP_PLATFORM

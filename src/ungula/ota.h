@@ -7,7 +7,7 @@
 #error UngulaOta requires a C++ compiler
 #endif
 
-#include <ungula/core.h>  // triggers lib/ path discovery for Arduino .ino projects
+#include <ungula/core.h> // triggers lib/ path discovery for Arduino .ino projects
 
 // Core
 #include "ungula/ota/core/i_firmware_writer.h"

@@ -12,18 +12,23 @@
 #include <cstdio>
 #include <cstring>
 
-namespace ungula::ota {
+namespace ungula::ota
+{
 
     static constexpr size_t STREAM_BUF_SIZE = 4096;
 
-    EspIdfSdOtaSource::EspIdfSdOtaSource(const char* basePath, const char* binFilename)
-        : basePath_(basePath), binFilename_(binFilename) {}
+    EspIdfSdOtaSource::EspIdfSdOtaSource(const char *basePath, const char *binFilename)
+            : basePath_(basePath)
+            , binFilename_(binFilename)
+    {
+    }
 
-    bool EspIdfSdOtaSource::fetchVersion(char* out, size_t maxLen) {
+    bool EspIdfSdOtaSource::fetchVersion(char *out, size_t maxLen)
+    {
         char path[128];
         snprintf(path, sizeof(path), "%s/version.txt", basePath_);
 
-        FILE* f = fopen(path, "r");
+        FILE *f = fopen(path, "r");
         if (!f) {
             log_error("OTA SD: cannot open %s", path);
             return false;
@@ -59,11 +64,13 @@ namespace ungula::ota {
         return true;
     }
 
-    size_t EspIdfSdOtaSource::getFirmwareSize() {
+    size_t EspIdfSdOtaSource::getFirmwareSize()
+    {
         return firmwareSize_;
     }
 
-    bool EspIdfSdOtaSource::streamFirmware(OtaDataCallback callback, void* ctx) {
+    bool EspIdfSdOtaSource::streamFirmware(OtaDataCallback callback, void *ctx)
+    {
         char path[128];
         snprintf(path, sizeof(path), "%s/%s", basePath_, binFilename_);
 
@@ -76,7 +83,7 @@ namespace ungula::ota {
 
         firmwareSize_ = static_cast<size_t>(st.st_size);
 
-        FILE* f = fopen(path, "rb");
+        FILE *f = fopen(path, "rb");
         if (!f) {
             log_error("OTA SD: cannot open %s", path);
             return false;
@@ -108,5 +115,5 @@ namespace ungula::ota {
         return true;
     }
 
-}  // namespace ungula::ota
-#endif  // ENABLE_OTA_SD && ESP_PLATFORM
+} // namespace ungula::ota
+#endif // ENABLE_OTA_SD && ESP_PLATFORM

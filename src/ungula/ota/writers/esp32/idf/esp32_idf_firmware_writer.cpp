@@ -9,9 +9,11 @@
 #include <emblogx/logger.h>
 #include <esp_ota_ops.h>
 
-namespace ungula::ota {
+namespace ungula::ota
+{
 
-    bool Esp32IdfFirmwareWriter::begin(size_t totalSize) {
+    bool Esp32IdfFirmwareWriter::begin(size_t totalSize)
+    {
         partition_ = esp_ota_get_next_update_partition(nullptr);
         if (!partition_) {
             log_error("OTA Writer: no OTA partition available");
@@ -31,7 +33,8 @@ namespace ungula::ota {
         return true;
     }
 
-    size_t Esp32IdfFirmwareWriter::writeChunk(const uint8_t* data, size_t len) {
+    size_t Esp32IdfFirmwareWriter::writeChunk(const uint8_t *data, size_t len)
+    {
         esp_err_t err = esp_ota_write(handle_, data, len);
         if (err != ESP_OK) {
             log_error("OTA Writer: esp_ota_write failed: %s", esp_err_to_name(err));
@@ -40,7 +43,8 @@ namespace ungula::ota {
         return len;
     }
 
-    bool Esp32IdfFirmwareWriter::end() {
+    bool Esp32IdfFirmwareWriter::end()
+    {
         esp_err_t err = esp_ota_end(handle_);
         if (err != ESP_OK) {
             log_error("OTA Writer: esp_ota_end failed: %s", esp_err_to_name(err));
@@ -56,12 +60,13 @@ namespace ungula::ota {
         return true;
     }
 
-    void Esp32IdfFirmwareWriter::abort() {
+    void Esp32IdfFirmwareWriter::abort()
+    {
         esp_ota_abort(handle_);
         handle_ = 0;
         partition_ = nullptr;
         log_warn("OTA Writer: aborted");
     }
 
-}  // namespace ungula::ota
-#endif  // ESP_PLATFORM
+} // namespace ungula::ota
+#endif // ESP_PLATFORM

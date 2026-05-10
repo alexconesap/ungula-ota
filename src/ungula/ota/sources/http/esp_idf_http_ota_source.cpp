@@ -11,14 +11,19 @@
 
 #include <cstring>
 
-namespace ungula::ota {
+namespace ungula::ota
+{
 
     static constexpr size_t STREAM_BUF_SIZE = 4096;
 
-    EspIdfHttpOtaSource::EspIdfHttpOtaSource(const char* baseUrl, const char* binFilename)
-        : baseUrl_(baseUrl), binFilename_(binFilename) {}
+    EspIdfHttpOtaSource::EspIdfHttpOtaSource(const char *baseUrl, const char *binFilename)
+            : baseUrl_(baseUrl)
+            , binFilename_(binFilename)
+    {
+    }
 
-    bool EspIdfHttpOtaSource::fetchVersion(char* out, size_t maxLen) {
+    bool EspIdfHttpOtaSource::fetchVersion(char *out, size_t maxLen)
+    {
         char url[256];
         snprintf(url, sizeof(url), "%s/version.txt", baseUrl_);
 
@@ -49,9 +54,7 @@ namespace ungula::ota {
         }
 
         // Read the version string (small payload, read in one go)
-        size_t readMax = (contentLength > 0 && (size_t)contentLength < maxLen - 1)
-                                 ? (size_t)contentLength
-                                 : maxLen - 1;
+        size_t readMax = (contentLength > 0 && (size_t)contentLength < maxLen - 1) ? (size_t)contentLength : maxLen - 1;
         int bytesRead = esp_http_client_read(client, out, readMax);
         esp_http_client_close(client);
         esp_http_client_cleanup(client);
@@ -64,8 +67,8 @@ namespace ungula::ota {
         out[bytesRead] = '\0';
 
         // Trim trailing whitespace and newlines
-        while (bytesRead > 0 && (out[bytesRead - 1] == '\n' || out[bytesRead - 1] == '\r' ||
-                                 out[bytesRead - 1] == ' ')) {
+        while (bytesRead > 0 &&
+               (out[bytesRead - 1] == '\n' || out[bytesRead - 1] == '\r' || out[bytesRead - 1] == ' ')) {
             out[--bytesRead] = '\0';
         }
 
@@ -101,11 +104,13 @@ namespace ungula::ota {
         return true;
     }
 
-    size_t EspIdfHttpOtaSource::getFirmwareSize() {
+    size_t EspIdfHttpOtaSource::getFirmwareSize()
+    {
         return firmwareSize_;
     }
 
-    bool EspIdfHttpOtaSource::streamFirmware(OtaDataCallback callback, void* ctx) {
+    bool EspIdfHttpOtaSource::streamFirmware(OtaDataCallback callback, void *ctx)
+    {
         char url[256];
         snprintf(url, sizeof(url), "%s/%s", baseUrl_, binFilename_);
 
@@ -149,7 +154,7 @@ namespace ungula::ota {
 
         while (remaining > 0) {
             size_t toRead = (remaining < STREAM_BUF_SIZE) ? remaining : STREAM_BUF_SIZE;
-            int bytesRead = esp_http_client_read(client, reinterpret_cast<char*>(buf), toRead);
+            int bytesRead = esp_http_client_read(client, reinterpret_cast<char *>(buf), toRead);
 
             if (bytesRead <= 0) {
                 log_error("OTA HTTP: stream read failed (%u bytes remaining)", (unsigned)remaining);
@@ -173,5 +178,5 @@ namespace ungula::ota {
         return true;
     }
 
-}  // namespace ungula::ota
-#endif  // ENABLE_OTA_HTTP && ESP_PLATFORM
+} // namespace ungula::ota
+#endif // ENABLE_OTA_HTTP && ESP_PLATFORM

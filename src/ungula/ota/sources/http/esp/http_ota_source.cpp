@@ -16,26 +16,31 @@
 #include <cstdio>
 #include <cstring>
 
-namespace ungula::ota {
+namespace ungula::ota
+{
 
     static constexpr size_t STREAM_BUF_SIZE = 4096;
     static constexpr int HTTP_TIMEOUT_MS = 30000;
 
-    EspHttpOtaSource::EspHttpOtaSource(const char* baseUrl, const char* binFilename)
-        : baseUrl_(baseUrl), binFilename_(binFilename) {}
+    EspHttpOtaSource::EspHttpOtaSource(const char *baseUrl, const char *binFilename)
+            : baseUrl_(baseUrl)
+            , binFilename_(binFilename)
+    {
+    }
 
     // -- fetchVersion: GET {baseUrl}/version.txt --
 
     /// Collect response body into a char buffer (for version.txt)
     struct VersionCtx {
-            char* buf;
-            size_t maxLen;
-            size_t written;
+        char *buf;
+        size_t maxLen;
+        size_t written;
     };
 
-    static esp_err_t version_event_handler(esp_http_client_event_t* evt) {
+    static esp_err_t version_event_handler(esp_http_client_event_t *evt)
+    {
         if (evt->event_id == HTTP_EVENT_ON_DATA) {
-            auto* ctx = static_cast<VersionCtx*>(evt->user_data);
+            auto *ctx = static_cast<VersionCtx *>(evt->user_data);
             size_t space = ctx->maxLen - ctx->written - 1;
             if (space > 0) {
                 size_t copy = evt->data_len < space ? static_cast<size_t>(evt->data_len) : space;
@@ -47,7 +52,8 @@ namespace ungula::ota {
         return ESP_OK;
     }
 
-    bool EspHttpOtaSource::fetchVersion(char* out, size_t maxLen) {
+    bool EspHttpOtaSource::fetchVersion(char *out, size_t maxLen)
+    {
         if (!ungula::net::wifi::sta_is_connected()) {
             log_error("OTA HTTP: WiFi not connected");
             return false;
@@ -56,7 +62,7 @@ namespace ungula::ota {
         char url[256];
         std::snprintf(url, sizeof(url), "%s/version.txt", baseUrl_);
 
-        VersionCtx ctx = {out, maxLen, 0};
+        VersionCtx ctx = { out, maxLen, 0 };
 
         esp_http_client_config_t config = {};
         config.url = url;
@@ -77,14 +83,13 @@ namespace ungula::ota {
         esp_http_client_cleanup(client);
 
         if (err != ESP_OK || status != 200) {
-            log_error("OTA HTTP: GET %s failed (err=%s, status=%d)", url, esp_err_to_name(err),
-                      status);
+            log_error("OTA HTTP: GET %s failed (err=%s, status=%d)", url, esp_err_to_name(err), status);
             return false;
         }
 
         // Trim trailing whitespace/newlines
-        while (ctx.written > 0 && (out[ctx.written - 1] == '\n' || out[ctx.written - 1] == '\r' ||
-                                   out[ctx.written - 1] == ' ')) {
+        while (ctx.written > 0 &&
+               (out[ctx.written - 1] == '\n' || out[ctx.written - 1] == '\r' || out[ctx.written - 1] == ' ')) {
             ctx.written--;
             out[ctx.written] = '\0';
         }
@@ -97,13 +102,15 @@ namespace ungula::ota {
         return true;
     }
 
-    size_t EspHttpOtaSource::getFirmwareSize() {
+    size_t EspHttpOtaSource::getFirmwareSize()
+    {
         return firmwareSize_;
     }
 
     // -- streamFirmware: GET {baseUrl}/{binFilename}, stream chunks via callback --
 
-    bool EspHttpOtaSource::streamFirmware(OtaDataCallback callback, void* ctx) {
+    bool EspHttpOtaSource::streamFirmware(OtaDataCallback callback, void *ctx)
+    {
         if (!ungula::net::wifi::sta_is_connected()) {
             log_error("OTA HTTP: WiFi not connected");
             return false;
@@ -127,7 +134,7 @@ namespace ungula::ota {
         }
 
         // Open the connection and send the request
-        esp_err_t err = esp_http_client_open(client, 0);  // 0 = no request body
+        esp_err_t err = esp_http_client_open(client, 0); // 0 = no request body
         if (err != ESP_OK) {
             log_error("OTA HTTP: open failed: %s", esp_err_to_name(err));
             esp_http_client_cleanup(client);
@@ -161,13 +168,12 @@ namespace ungula::ota {
         bool success = true;
 
         while (remaining > 0) {
-            int toRead = (remaining < STREAM_BUF_SIZE) ? static_cast<int>(remaining)
-                                                       : static_cast<int>(STREAM_BUF_SIZE);
+            int toRead = (remaining < STREAM_BUF_SIZE) ? static_cast<int>(remaining) :
+                                                         static_cast<int>(STREAM_BUF_SIZE);
 
-            int bytesRead = esp_http_client_read(client, reinterpret_cast<char*>(buf), toRead);
+            int bytesRead = esp_http_client_read(client, reinterpret_cast<char *>(buf), toRead);
             if (bytesRead <= 0) {
-                log_error("OTA HTTP: read failed (%u bytes remaining)",
-                          static_cast<unsigned>(remaining));
+                log_error("OTA HTTP: read failed (%u bytes remaining)", static_cast<unsigned>(remaining));
                 success = false;
                 break;
             }
@@ -186,5 +192,5 @@ namespace ungula::ota {
         return success;
     }
 
-}  // namespace ungula::ota
-#endif  // ENABLE_OTA_HTTP && ESP_PLATFORM
+} // namespace ungula::ota
+#endif // ENABLE_OTA_HTTP && ESP_PLATFORM

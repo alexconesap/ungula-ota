@@ -13,47 +13,53 @@
 #include "i_ota_source.h"
 #include "ota_version.h"
 
-namespace ungula::ota {
+namespace ungula::ota
+{
 
-    const char* otaStatusToString(OtaStatus status) {
+    const char *otaStatusToString(OtaStatus status)
+    {
         switch (status) {
-            case OtaStatus::Ok:
-                return "ok";
-            case OtaStatus::NoUpdate:
-                return "no_update";
-            case OtaStatus::NoSource:
-                return "no_source";
-            case OtaStatus::NoWriter:
-                return "no_writer";
-            case OtaStatus::FetchVersionFailed:
-                return "fetch_version_failed";
-            case OtaStatus::VersionParseFailed:
-                return "version_parse_failed";
-            case OtaStatus::BeginFailed:
-                return "begin_failed";
-            case OtaStatus::StreamFailed:
-                return "stream_failed";
-            case OtaStatus::WriteFailed:
-                return "write_failed";
-            case OtaStatus::FinalizeFailed:
-                return "finalize_failed";
+        case OtaStatus::Ok:
+            return "ok";
+        case OtaStatus::NoUpdate:
+            return "no_update";
+        case OtaStatus::NoSource:
+            return "no_source";
+        case OtaStatus::NoWriter:
+            return "no_writer";
+        case OtaStatus::FetchVersionFailed:
+            return "fetch_version_failed";
+        case OtaStatus::VersionParseFailed:
+            return "version_parse_failed";
+        case OtaStatus::BeginFailed:
+            return "begin_failed";
+        case OtaStatus::StreamFailed:
+            return "stream_failed";
+        case OtaStatus::WriteFailed:
+            return "write_failed";
+        case OtaStatus::FinalizeFailed:
+            return "finalize_failed";
         }
         return "unknown";
     }
 
-    void OtaUpdater::setSource(IOtaSource* source) {
+    void OtaUpdater::setSource(IOtaSource *source)
+    {
         source_ = source;
     }
 
-    void OtaUpdater::setWriter(IFirmwareWriter* writer) {
+    void OtaUpdater::setWriter(IFirmwareWriter *writer)
+    {
         writer_ = writer;
     }
 
-    void OtaUpdater::setProgressCallback(OtaProgressCallback callback) {
+    void OtaUpdater::setProgressCallback(OtaProgressCallback callback)
+    {
         progressCb_ = callback;
     }
 
-    OtaStatus OtaUpdater::checkForUpdate(const char* currentVersion) {
+    OtaStatus OtaUpdater::checkForUpdate(const char *currentVersion)
+    {
         if (source_ == nullptr) {
             log_error("OTA: no source configured");
             return OtaStatus::NoSource;
@@ -82,18 +88,19 @@ namespace ungula::ota {
     /// The writer's begin() is called lazily on the first data chunk so
     /// that the firmware size from Content-Length is already available.
     struct StreamCtx {
-            IFirmwareWriter* writer;
-            IOtaSource* source;
-            OtaProgressCallback progressCb;
-            size_t totalSize;
-            size_t totalWritten;
-            bool writeError;
-            bool beginError;
-            bool beginCalled;
+        IFirmwareWriter *writer;
+        IOtaSource *source;
+        OtaProgressCallback progressCb;
+        size_t totalSize;
+        size_t totalWritten;
+        bool writeError;
+        bool beginError;
+        bool beginCalled;
     };
 
-    static bool streamCallback(const uint8_t* data, size_t len, void* ctx) {
-        auto* context = static_cast<StreamCtx*>(ctx);
+    static bool streamCallback(const uint8_t *data, size_t len, void *ctx)
+    {
+        auto *context = static_cast<StreamCtx *>(ctx);
 
         // Lazy begin: the source has set the firmware size from the HTTP
         // Content-Length header before delivering the first data chunk.
@@ -116,12 +123,13 @@ namespace ungula::ota {
         }
         context->totalWritten += written;
         if (context->progressCb != nullptr) {
-            context->progressCb(OtaProgressCallbackData{context->totalWritten, context->totalSize});
+            context->progressCb(OtaProgressCallbackData{ context->totalWritten, context->totalSize });
         }
         return true;
     }
 
-    OtaStatus OtaUpdater::downloadAndInstall(bool autoReboot) {
+    OtaStatus OtaUpdater::downloadAndInstall(bool autoReboot)
+    {
         if (source_ == nullptr) {
             log_error("OTA: no source configured");
             return OtaStatus::NoSource;
@@ -136,13 +144,12 @@ namespace ungula::ota {
         // available. Calling begin(0) would pass UPDATE_SIZE_UNKNOWN to the
         // ESP32 Update library, causing "premature end" on finalize.
 
-        StreamCtx sctx = {writer_, source_, progressCb_, 0, 0, false, false, false};
+        StreamCtx sctx = { writer_, source_, progressCb_, 0, 0, false, false, false };
 
         bool streamOk = source_->streamFirmware(streamCallback, &sctx);
 
         if (!streamOk || sctx.writeError || sctx.beginError) {
-            log_error("OTA: stream/write failed at %u bytes",
-                      static_cast<unsigned>(sctx.totalWritten));
+            log_error("OTA: stream/write failed at %u bytes", static_cast<unsigned>(sctx.totalWritten));
             if (sctx.beginCalled) {
                 writer_->abort();
             }
@@ -170,7 +177,8 @@ namespace ungula::ota {
         return OtaStatus::Ok;
     }
 
-    OtaStatus OtaUpdater::performUpdate(const char* currentVersion, bool autoReboot) {
+    OtaStatus OtaUpdater::performUpdate(const char *currentVersion, bool autoReboot)
+    {
         OtaStatus checkResult = checkForUpdate(currentVersion);
         if (checkResult != OtaStatus::Ok) {
             return checkResult;
@@ -178,4 +186,4 @@ namespace ungula::ota {
         return downloadAndInstall(autoReboot);
     }
 
-}  // namespace ungula::ota
+} // namespace ungula::ota

@@ -6,13 +6,15 @@
 
 #include <cstdio>
 
-namespace ungula::ota {
+namespace ungula::ota
+{
 
     /// Compare two semantic version strings (x.y.z format).
     /// Returns  1 if remote > current
     /// Returns  0 if remote == current
     /// Returns -1 if remote < current
-    inline int compareVersions(const char* remote, const char* current) {
+    inline int compareVersions(const char *remote, const char *current)
+    {
         int rMajor = 0, rMinor = 0, rPatch = 0;
         int cMajor = 0, cMinor = 0, cPatch = 0;
 
@@ -29,4 +31,4 @@ namespace ungula::ota {
         return 0;
     }
 
-}  // namespace ungula::ota
+} // namespace ungula::ota

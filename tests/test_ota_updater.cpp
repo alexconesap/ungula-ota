@@ -11,73 +11,85 @@ using namespace ungula::ota;
 // --- Mock OTA source ---
 
 class MockOtaSource : public IOtaSource {
-    public:
-        std::string version = "1.0.1";
-        bool fetchFails = false;
-        bool streamFails = false;
-        size_t firmwareSize = 1024;
-        std::vector<uint8_t> firmwareData;
+public:
+    std::string version = "1.0.1";
+    bool fetchFails = false;
+    bool streamFails = false;
+    size_t firmwareSize = 1024;
+    std::vector<uint8_t> firmwareData;
 
-        MockOtaSource() : firmwareData(1024, 0xAA) {}
+    MockOtaSource()
+            : firmwareData(1024, 0xAA)
+    {
+    }
 
-        bool fetchVersion(char* out, size_t maxLen) override {
-            if (fetchFails)
-                return false;
-            strncpy(out, version.c_str(), maxLen - 1);
-            out[maxLen - 1] = '\0';
-            return true;
-        }
+    bool fetchVersion(char *out, size_t maxLen) override
+    {
+        if (fetchFails)
+            return false;
+        strncpy(out, version.c_str(), maxLen - 1);
+        out[maxLen - 1] = '\0';
+        return true;
+    }
 
-        size_t getFirmwareSize() override {
-            return firmwareSize;
-        }
+    size_t getFirmwareSize() override
+    {
+        return firmwareSize;
+    }
 
-        bool streamFirmware(OtaDataCallback callback, void* ctx) override {
-            if (streamFails)
-                return false;
-            return callback(firmwareData.data(), firmwareData.size(), ctx);
-        }
+    bool streamFirmware(OtaDataCallback callback, void *ctx) override
+    {
+        if (streamFails)
+            return false;
+        return callback(firmwareData.data(), firmwareData.size(), ctx);
+    }
 };
 
 // --- Mock firmware writer ---
 
 class MockFirmwareWriter : public IFirmwareWriter {
-    public:
-        bool beginFails = false;
-        bool writeFails = false;
-        bool endFails = false;
-        size_t totalWritten = 0;
-        bool aborted = false;
+public:
+    bool beginFails = false;
+    bool writeFails = false;
+    bool endFails = false;
+    size_t totalWritten = 0;
+    bool aborted = false;
 
-        bool begin(size_t totalSize) override {
-            (void)totalSize;
-            return !beginFails;
-        }
+    bool begin(size_t totalSize) override
+    {
+        (void)totalSize;
+        return !beginFails;
+    }
 
-        size_t writeChunk(const uint8_t* data, size_t len) override {
-            (void)data;
-            if (writeFails)
-                return 0;
-            totalWritten += len;
-            return len;
-        }
+    size_t writeChunk(const uint8_t *data, size_t len) override
+    {
+        (void)data;
+        if (writeFails)
+            return 0;
+        totalWritten += len;
+        return len;
+    }
 
-        bool end() override {
-            return !endFails;
-        }
-        void abort() override {
-            aborted = true;
-        }
+    bool end() override
+    {
+        return !endFails;
+    }
+    void abort() override
+    {
+        aborted = true;
+    }
 };
 
 // --- Tests ---
 
-TEST(OtaUpdater, CheckForUpdateNoSource) {
+TEST(OtaUpdater, CheckForUpdateNoSource)
+{
     OtaUpdater updater;
     EXPECT_EQ(updater.checkForUpdate("1.0.0"), OtaStatus::NoSource);
 }
 
-TEST(OtaUpdater, CheckForUpdateAvailable) {
+TEST(OtaUpdater, CheckForUpdateAvailable)
+{
     OtaUpdater updater;
     MockOtaSource source;
     source.version = "1.0.2";
@@ -86,7 +98,8 @@ TEST(OtaUpdater, CheckForUpdateAvailable) {
     EXPECT_EQ(updater.checkForUpdate("1.0.1"), OtaStatus::Ok);
 }
 
-TEST(OtaUpdater, CheckForUpdateNotAvailable) {
+TEST(OtaUpdater, CheckForUpdateNotAvailable)
+{
     OtaUpdater updater;
     MockOtaSource source;
     source.version = "1.0.0";
@@ -95,7 +108,8 @@ TEST(OtaUpdater, CheckForUpdateNotAvailable) {
     EXPECT_EQ(updater.checkForUpdate("1.0.0"), OtaStatus::NoUpdate);
 }
 
-TEST(OtaUpdater, CheckForUpdateOlder) {
+TEST(OtaUpdater, CheckForUpdateOlder)
+{
     OtaUpdater updater;
     MockOtaSource source;
     source.version = "0.9.0";
@@ -104,7 +118,8 @@ TEST(OtaUpdater, CheckForUpdateOlder) {
     EXPECT_EQ(updater.checkForUpdate("1.0.0"), OtaStatus::NoUpdate);
 }
 
-TEST(OtaUpdater, CheckForUpdateFetchFails) {
+TEST(OtaUpdater, CheckForUpdateFetchFails)
+{
     OtaUpdater updater;
     MockOtaSource source;
     source.fetchFails = true;
@@ -113,7 +128,8 @@ TEST(OtaUpdater, CheckForUpdateFetchFails) {
     EXPECT_EQ(updater.checkForUpdate("1.0.0"), OtaStatus::FetchVersionFailed);
 }
 
-TEST(OtaUpdater, CheckForUpdateEmptyVersion) {
+TEST(OtaUpdater, CheckForUpdateEmptyVersion)
+{
     OtaUpdater updater;
     MockOtaSource source;
     source.version = "";
@@ -122,7 +138,8 @@ TEST(OtaUpdater, CheckForUpdateEmptyVersion) {
     EXPECT_EQ(updater.checkForUpdate("1.0.0"), OtaStatus::VersionParseFailed);
 }
 
-TEST(OtaUpdater, PerformUpdateNoWriter) {
+TEST(OtaUpdater, PerformUpdateNoWriter)
+{
     OtaUpdater updater;
     MockOtaSource source;
     source.version = "1.0.2";
@@ -132,7 +149,8 @@ TEST(OtaUpdater, PerformUpdateNoWriter) {
     EXPECT_EQ(updater.performUpdate("1.0.0", false), OtaStatus::NoWriter);
 }
 
-TEST(OtaUpdater, PerformUpdateSuccess) {
+TEST(OtaUpdater, PerformUpdateSuccess)
+{
     OtaUpdater updater;
     MockOtaSource source;
     MockFirmwareWriter writer;
@@ -144,7 +162,8 @@ TEST(OtaUpdater, PerformUpdateSuccess) {
     EXPECT_EQ(writer.totalWritten, 1024u);
 }
 
-TEST(OtaUpdater, PerformUpdateBeginFails) {
+TEST(OtaUpdater, PerformUpdateBeginFails)
+{
     OtaUpdater updater;
     MockOtaSource source;
     MockFirmwareWriter writer;
@@ -156,7 +175,8 @@ TEST(OtaUpdater, PerformUpdateBeginFails) {
     EXPECT_EQ(updater.performUpdate("1.0.0", false), OtaStatus::BeginFailed);
 }
 
-TEST(OtaUpdater, PerformUpdateStreamFails) {
+TEST(OtaUpdater, PerformUpdateStreamFails)
+{
     OtaUpdater updater;
     MockOtaSource source;
     MockFirmwareWriter writer;
@@ -171,7 +191,8 @@ TEST(OtaUpdater, PerformUpdateStreamFails) {
     EXPECT_FALSE(writer.aborted);
 }
 
-TEST(OtaUpdater, PerformUpdateWriteFails) {
+TEST(OtaUpdater, PerformUpdateWriteFails)
+{
     OtaUpdater updater;
     MockOtaSource source;
     MockFirmwareWriter writer;
@@ -184,7 +205,8 @@ TEST(OtaUpdater, PerformUpdateWriteFails) {
     EXPECT_TRUE(writer.aborted);
 }
 
-TEST(OtaUpdater, PerformUpdateFinalizeFails) {
+TEST(OtaUpdater, PerformUpdateFinalizeFails)
+{
     OtaUpdater updater;
     MockOtaSource source;
     MockFirmwareWriter writer;
@@ -196,7 +218,8 @@ TEST(OtaUpdater, PerformUpdateFinalizeFails) {
     EXPECT_EQ(updater.performUpdate("1.0.0", false), OtaStatus::FinalizeFailed);
 }
 
-TEST(OtaUpdater, PerformUpdateNoUpdateAvailable) {
+TEST(OtaUpdater, PerformUpdateNoUpdateAvailable)
+{
     OtaUpdater updater;
     MockOtaSource source;
     MockFirmwareWriter writer;
@@ -208,7 +231,8 @@ TEST(OtaUpdater, PerformUpdateNoUpdateAvailable) {
     EXPECT_EQ(writer.totalWritten, 0u);
 }
 
-TEST(OtaUpdater, ProgressCallbackInvoked) {
+TEST(OtaUpdater, ProgressCallbackInvoked)
+{
     OtaUpdater updater;
     MockOtaSource source;
     MockFirmwareWriter writer;
@@ -228,26 +252,32 @@ TEST(OtaUpdater, ProgressCallbackInvoked) {
 // --- Mock writer that records the totalSize passed to begin() ---
 
 class SizeCapturingWriter : public IFirmwareWriter {
-    public:
-        size_t capturedSize = 999;
-        size_t totalWritten = 0;
+public:
+    size_t capturedSize = 999;
+    size_t totalWritten = 0;
 
-        bool begin(size_t totalSize) override {
-            capturedSize = totalSize;
-            return true;
-        }
-        size_t writeChunk(const uint8_t* data, size_t len) override {
-            (void)data;
-            totalWritten += len;
-            return len;
-        }
-        bool end() override {
-            return true;
-        }
-        void abort() override {}
+    bool begin(size_t totalSize) override
+    {
+        capturedSize = totalSize;
+        return true;
+    }
+    size_t writeChunk(const uint8_t *data, size_t len) override
+    {
+        (void)data;
+        totalWritten += len;
+        return len;
+    }
+    bool end() override
+    {
+        return true;
+    }
+    void abort() override
+    {
+    }
 };
 
-TEST(OtaUpdater, BeginReceivesCorrectFirmwareSize) {
+TEST(OtaUpdater, BeginReceivesCorrectFirmwareSize)
+{
     OtaUpdater updater;
     MockOtaSource source;
     SizeCapturingWriter writer;
@@ -260,21 +290,23 @@ TEST(OtaUpdater, BeginReceivesCorrectFirmwareSize) {
     EXPECT_EQ(writer.capturedSize, 65536u);
 }
 
-TEST(OtaUpdater, BeginReceivesZeroWhenSizeUnknown) {
+TEST(OtaUpdater, BeginReceivesZeroWhenSizeUnknown)
+{
     OtaUpdater updater;
     MockOtaSource source;
     SizeCapturingWriter writer;
     source.version = "1.0.2";
-    source.firmwareSize = 0;  // source cannot determine size
+    source.firmwareSize = 0; // source cannot determine size
     updater.setSource(&source);
     updater.setWriter(&writer);
 
     EXPECT_EQ(updater.performUpdate("1.0.0", false), OtaStatus::Ok);
     EXPECT_EQ(writer.capturedSize, 0u);
-    EXPECT_EQ(writer.totalWritten, 1024u);  // data still streamed
+    EXPECT_EQ(writer.totalWritten, 1024u); // data still streamed
 }
 
-TEST(OtaUpdater, StatusToString) {
+TEST(OtaUpdater, StatusToString)
+{
     EXPECT_STREQ(otaStatusToString(OtaStatus::Ok), "ok");
     EXPECT_STREQ(otaStatusToString(OtaStatus::NoUpdate), "no_update");
     EXPECT_STREQ(otaStatusToString(OtaStatus::NoSource), "no_source");
