@@ -9,12 +9,12 @@
 namespace ungula::ota
 {
 
-    class IOtaSource;
-    class IFirmwareWriter;
+class IOtaSource;
+class IFirmwareWriter;
 
-    /// Facade for performing OTA firmware updates.
-    /// Owns nothing — caller manages the lifetime of source and writer.
-    class OtaUpdater {
+/// Facade for performing OTA firmware updates.
+/// Owns nothing — caller manages the lifetime of source and writer.
+class OtaUpdater {
     public:
         OtaUpdater() = default;
 
@@ -47,7 +47,7 @@ namespace ungula::ota
         /// Valid after checkForUpdate() returns Ok or NoUpdate.
         const char *getRemoteVersion() const
         {
-            return remoteVersion_;
+                return remoteVersion_;
         }
 
     private:
@@ -57,6 +57,6 @@ namespace ungula::ota
 
         // Cached remote version from last checkForUpdate / performUpdate
         char remoteVersion_[32] = {};
-    };
+};
 
 } // namespace ungula::ota

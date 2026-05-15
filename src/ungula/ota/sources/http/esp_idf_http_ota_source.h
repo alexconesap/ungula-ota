@@ -13,9 +13,9 @@
 namespace ungula::ota
 {
 
-    /// OTA source that fetches version.txt and firmware binary over HTTP
-    /// using the ESP-IDF esp_http_client API.
-    class EspIdfHttpOtaSource : public IOtaSource {
+/// OTA source that fetches version.txt and firmware binary over HTTP
+/// using the ESP-IDF esp_http_client API.
+class EspIdfHttpOtaSource : public IOtaSource {
     public:
         /// @param baseUrl     e.g. "http://updates.example.com/firmware/icb"
         /// @param binFilename e.g. "ICB.ino.bin"
@@ -29,10 +29,10 @@ namespace ungula::ota
         const char *baseUrl_;
         const char *binFilename_;
         size_t firmwareSize_ = 0;
-    };
+};
 
-    // Backward-compatible alias
-    using IdfHttpOtaSource = EspIdfHttpOtaSource;
+// Backward-compatible alias
+using IdfHttpOtaSource = EspIdfHttpOtaSource;
 
 } // namespace ungula::ota
 #endif // ENABLE_OTA_HTTP && ESP_PLATFORM

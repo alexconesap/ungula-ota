@@ -10,15 +10,15 @@
 namespace ungula::ota
 {
 
-    /// Callback invoked by IOtaSource::streamFirmware() for each data chunk.
-    /// Returns true to continue streaming, false to abort.
-    /// @param data  Pointer to the chunk bytes
-    /// @param len   Number of bytes in this chunk
-    /// @param ctx   Opaque context pointer passed through from streamFirmware()
-    using OtaDataCallback = bool (*)(const uint8_t *data, size_t len, void *ctx);
+/// Callback invoked by IOtaSource::streamFirmware() for each data chunk.
+/// Returns true to continue streaming, false to abort.
+/// @param data  Pointer to the chunk bytes
+/// @param len   Number of bytes in this chunk
+/// @param ctx   Opaque context pointer passed through from streamFirmware()
+using OtaDataCallback = bool (*)(const uint8_t *data, size_t len, void *ctx);
 
-    /// Interface for OTA firmware sources (HTTP server, SD card, etc.)
-    class IOtaSource {
+/// Interface for OTA firmware sources (HTTP server, SD card, etc.)
+class IOtaSource {
     public:
         virtual ~IOtaSource() = default;
 
@@ -37,6 +37,6 @@ namespace ungula::ota
         /// before invoking the first data callback.
         /// Returns true if all data was delivered successfully.
         virtual bool streamFirmware(OtaDataCallback callback, void *ctx) = 0;
-    };
+};
 
 } // namespace ungula::ota

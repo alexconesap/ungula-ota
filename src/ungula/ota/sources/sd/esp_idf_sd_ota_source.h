@@ -14,9 +14,9 @@
 namespace ungula::ota
 {
 
-    /// OTA source that reads version.txt and firmware binary from an SD card
-    /// using POSIX file I/O (the card must be mounted via VFS beforehand).
-    class EspIdfSdOtaSource : public IOtaSource {
+/// OTA source that reads version.txt and firmware binary from an SD card
+/// using POSIX file I/O (the card must be mounted via VFS beforehand).
+class EspIdfSdOtaSource : public IOtaSource {
     public:
         /// @param basePath     VFS mount path + subdir, e.g. "/sdcard/firmware/icb"
         /// @param binFilename  e.g. "ICB.ino.bin"
@@ -30,10 +30,10 @@ namespace ungula::ota
         const char *basePath_;
         const char *binFilename_;
         size_t firmwareSize_ = 0;
-    };
+};
 
-    // Backward-compatible alias
-    using IdfSdOtaSource = EspIdfSdOtaSource;
+// Backward-compatible alias
+using IdfSdOtaSource = EspIdfSdOtaSource;
 
 } // namespace ungula::ota
 #endif // ENABLE_OTA_SD && ESP_PLATFORM

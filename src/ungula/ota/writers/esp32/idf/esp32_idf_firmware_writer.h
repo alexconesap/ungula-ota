@@ -15,8 +15,8 @@
 namespace ungula::ota
 {
 
-    /// ESP-IDF native firmware writer using the OTA partition API.
-    class Esp32IdfFirmwareWriter : public IFirmwareWriter {
+/// ESP-IDF native firmware writer using the OTA partition API.
+class Esp32IdfFirmwareWriter : public IFirmwareWriter {
     public:
         bool begin(size_t totalSize) override;
         size_t writeChunk(const uint8_t *data, size_t len) override;
@@ -26,9 +26,9 @@ namespace ungula::ota
     private:
         esp_ota_handle_t handle_ = 0;
         const esp_partition_t *partition_ = nullptr;
-    };
+};
 
-    using Esp32FirmwareWriter = Esp32IdfFirmwareWriter;
+using Esp32FirmwareWriter = Esp32IdfFirmwareWriter;
 
 } // namespace ungula::ota
 #endif // ESP_PLATFORM

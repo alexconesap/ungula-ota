@@ -4,11 +4,11 @@
 namespace ungula::core::system
 {
 
-    void SystemControl::reboot()
-    {
-    }
-    void SystemControl::rebootAfterMs(uint32_t)
-    {
-    }
+void SystemControl::reboot()
+{
+}
+void SystemControl::rebootAfterMs(uint32_t)
+{
+}
 
 } // namespace ungula::core::system

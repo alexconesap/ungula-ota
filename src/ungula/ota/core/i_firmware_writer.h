@@ -10,8 +10,8 @@
 namespace ungula::ota
 {
 
-    /// Interface for writing firmware to flash (platform-specific).
-    class IFirmwareWriter {
+/// Interface for writing firmware to flash (platform-specific).
+class IFirmwareWriter {
     public:
         virtual ~IFirmwareWriter() = default;
 
@@ -29,6 +29,6 @@ namespace ungula::ota
 
         /// Abort an in-progress write and clean up.
         virtual void abort() = 0;
-    };
+};
 
 } // namespace ungula::ota
