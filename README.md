@@ -2,11 +2,34 @@
 
 > **High-performance embedded C++ libraries for ESP32, STM32 and other MCUs** — streaming OTA firmware update (HTTP or SD source). Supported targets: ESP32 only.
 
+> **LLM usage note:** if this library is consumed from a coding AI workflow, explicitly point the agent to `API.md` first. `API.md` is the LLM-facing contract (public API + examples + constraints) and avoids wasting time/tokens scanning source files and this human-oriented README.
+
 OTA firmware update library for ESP32. It streams firmware in chunks from an HTTP server or SD card, and writes it to flash. No full binary buffered in RAM.
 
 The update source (where the firmware lives) and the platform writer (how it gets written) are injected separately, so you can swap between HTTP and SD without touching the core logic.
 
 Concrete adapters use ESP-IDF APIs directly: `esp_http_client` for HTTP, POSIX file I/O via VFS for SD, and `esp_ota_ops` for flash writing.
+
+## Table of Contents
+
+- [Directory Structure](#directory-structure)
+- [Stack Size Requirement](#stack-size-requirement)
+- [Quick Start — HTTP Update](#quick-start-http-update)
+- [Quick Start — SD Card](#quick-start-sd-card)
+- [Examples](#examples)
+  - [Check First, Update Later](#check-first-update-later)
+  - [Progress Callback](#progress-callback)
+  - [Writing Your Own Source](#writing-your-own-source)
+  - [Writing Your Own Writer](#writing-your-own-writer)
+- [OtaStatus Codes](#otastatus-codes)
+- [Compilation Guards](#compilation-guards)
+- [Testing](#testing)
+  - [Local development (sibling repos available)](#local-development-sibling-repos-available)
+  - [Standalone (no sibling repos)](#standalone-no-sibling-repos)
+- [Dependencies](#dependencies)
+- [Acknowledgements](#acknowledgements)
+- [License](#license)
+- [Arduino CLI symlink note (rarely relevant)](#arduino-cli-symlink-note-rarely-relevant)
 
 ## Directory Structure
 
@@ -258,7 +281,7 @@ The resulting adapter selection:
 
 If `ESP_PLATFORM` is not defined (e.g. desktop unit tests), only the core compiles. If a feature flag is missing, the corresponding source adapter is excluded even if the platform flag is present.
 
-Type aliases (`HttpOtaSource`, `SdOtaSource`, `Esp32FirmwareWriter`) are provided in each header for convenience.
+Type aliases (`IdfHttpOtaSource`, `IdfSdOtaSource`, `Esp32FirmwareWriter`) are provided in each header for convenience.
 
 ## Testing
 

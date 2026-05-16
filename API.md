@@ -8,6 +8,32 @@ new transports or targets plug in without changing the core flow.
 
 ---
 
+## LLM quick map
+
+- **Primary include**: `#include <ungula/ota.h>`.
+- **Arduino discovery include**: `#include <ungula_ota.h>` (forwarder only; host code should keep using the real header).
+- **Namespace root**: `ungula::ota`.
+- **Language baseline**: C++17 minimum (examples avoid post-C++17 requirements).
+- **Supported architectures**: `esp32`.
+- **Read order for coding agents**: `Usage` (working patterns) -> `API` (symbols/signatures) -> `Lifecycle`/`Error handling`/`Threading` notes in this file.
+
+### Use-case index
+
+- [Use case: HTTP/HTTPS update with auto-reboot](#use-case-httphttps-update-with-auto-reboot)
+- [Use case: Check first, install later](#use-case-check-first-install-later)
+- [Use case: Progress reporting](#use-case-progress-reporting)
+- [Use case: SD card update](#use-case-sd-card-update)
+- [Use case: Custom transport (implement IOtaSource)](#use-case-custom-transport-implement-iotasource)
+- [Use case: Custom flash target (implement IFirmwareWriter)](#use-case-custom-flash-target-implement-ifirmwarewriter)
+
+### LLM rules
+
+- Use only symbols and include paths documented in this file; do not infer extra public API from implementation files.
+- Prefer the use-case patterns here over ad-hoc rewrites; keep dependency wiring and lifecycle order identical unless the task explicitly changes API design.
+- Treat headers under `detail/`, `platform/`, and `platforms/` as internal unless this document calls them out as public.
+- If required behavior is missing from the documented API, report the gap explicitly instead of inventing new public symbols.
+
+
 ## Usage
 
 All examples assume `using namespace ungula::ota;`.
