@@ -4,6 +4,8 @@
 
 > **LLM usage note:** if this library is consumed from a coding AI workflow, explicitly point the agent to `API.md` first. `API.md` is the LLM-facing contract (public API + examples + constraints) and avoids wasting time/tokens scanning source files and this human-oriented README.
 
+> **Warning - Active Development:** This library is under active architecture work to support multiple projects in parallel. Its structure is not finalized yet and may change without notice while this work is in progress. Updates are currently frequent (often daily). Target for structural freeze and stable `v1.0.0`: **June 2026**.
+
 OTA firmware update library for ESP32. It streams firmware in chunks from an HTTP server or SD card, and writes it to flash. No full binary buffered in RAM.
 
 The update source (where the firmware lives) and the platform writer (how it gets written) are injected separately, so you can swap between HTTP and SD without touching the core logic.
@@ -12,6 +14,7 @@ Concrete adapters use ESP-IDF APIs directly: `esp_http_client` for HTTP, POSIX f
 
 ## Table of Contents
 
+- [C++ Compatibility](#c-compatibility)
 - [Directory Structure](#directory-structure)
 - [Stack Size Requirement](#stack-size-requirement)
 - [Quick Start — HTTP Update](#quick-start-http-update)
@@ -30,6 +33,12 @@ Concrete adapters use ESP-IDF APIs directly: `esp_http_client` for HTTP, POSIX f
 - [Acknowledgements](#acknowledgements)
 - [License](#license)
 - [Arduino CLI symlink note (rarely relevant)](#arduino-cli-symlink-note-rarely-relevant)
+
+## C++ Compatibility
+
+- **Own source minimum**: `C++17`.
+- **Effective minimum for consumers**: `C++20`.
+- **Dependency impact**: Depends on `UngulaNet` (`C++20`), so consumers must compile as `C++20`.
 
 ## Directory Structure
 

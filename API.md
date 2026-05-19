@@ -13,7 +13,9 @@ new transports or targets plug in without changing the core flow.
 - **Primary include**: `#include <ungula/ota.h>`.
 - **Arduino discovery include**: `#include <ungula_ota.h>` (forwarder only; host code should keep using the real header).
 - **Namespace root**: `ungula::ota`.
-- **Language baseline**: C++17 minimum (examples avoid post-C++17 requirements).
+- **Own source minimum**: `C++17`.
+- **Effective minimum for consumers**: `C++20`.
+- **Dependency impact**: Depends on `UngulaNet` (`C++20`), so consumers must compile as `C++20`.
 - **Supported architectures**: `esp32`.
 - **Read order for coding agents**: `Usage` (working patterns) -> `API` (symbols/signatures) -> `Lifecycle`/`Error handling`/`Threading` notes in this file.
 
