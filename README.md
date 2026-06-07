@@ -301,6 +301,32 @@ if (coord.phase() == ungula::ota::CoordinatorPhase::UpdatingMain)
 enums passed to the callbacks. `CoordinatorPhase` is the FSM state. See `API.md`
 for the full surface.
 
+### Headless operation (no UI)
+
+The coordinator runs **identically with or without a display** — it depends on
+nothing in the UI. To support a headless build:
+
+- **Skip `setCallbacks()`.** The step/result callbacks are optional and exist
+  only to feed a UI; a headless build leaves them unset and the FSM runs the
+  same. The coordinator reboots MAIN itself on a successful update.
+- **Tick `loop()` from the main application loop, not from a UI loop.** If the
+  only `coord.loop()` call lives inside the screen redraw path, OTA silently
+  stops working when the UI is compiled out. Drive it from the same place that
+  ticks the rest of the system.
+- **Expose progress by polling, not callbacks.** `isActive()`, `phase()`,
+  `downloadPercent()` and `updateApplied()` are enough to surface OTA status
+  over a REST endpoint (e.g. `GET /api/system/ota/status`) and to start it
+  (`coord.start()` from `POST /api/system/ota/update`) with no display present.
+
+```cpp
+// In the main loop — runs whether or not a UI is compiled:
+if (coord.isActive()) coord.loop(now_ms);
+
+// REST status handler (headless-friendly):
+//   { "active": isActive(), "phase": coordinatorPhaseToString(phase()),
+//     "percent": downloadPercent(), "applied": updateApplied() }
+```
+
 ## OtaStatus Codes
 
 | Status | Meaning |

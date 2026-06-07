@@ -249,6 +249,11 @@ LLM rules:
 - Map `OtaStep` / `OtaResultKind` to UI strings in the host — do not expect the
   coordinator to produce text.
 - ESP32 only (FreeRTOS task for the download).
+- **Headless (no UI):** `setCallbacks()` is optional — omit it. Tick `loop()`
+  from the **main application loop**, never from a UI/redraw loop, so OTA works
+  whether or not a display is compiled in. Surface progress by polling
+  `isActive()` / `phase()` / `downloadPercent()` / `updateApplied()` (e.g. a
+  `GET …/ota/status` REST endpoint) and trigger it with `start()`.
 
 ---
 
