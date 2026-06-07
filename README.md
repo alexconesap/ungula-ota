@@ -248,6 +248,59 @@ private:
 };
 ```
 
+## Multi-Node Coordinator
+
+`OtaUpdater` updates **one** device. For a system where a controller must update
+itself **and** a set of peer nodes, `ungula/ota/coordinator/ota_coordinator.h`
+provides `OtaCoordinator` — the update FSM:
+
+1. tell the peers to update first,
+2. wait for them to update + reconnect,
+3. update MAIN (via `OtaUpdater`),
+4. reboot, or report "up to date".
+
+The coordinator carries **no node-protocol and no UI/i18n dependency**. How to
+reach the peers (their transport, message format, identities) and the firmware
+version are abstracted behind `CoordinatorHost`, which the project implements.
+Step/result progress is reported as **enums**; the host maps them to display
+text. (ESP32 only — the MAIN download runs on a FreeRTOS task.)
+
+```cpp
+#include <ungula/ota/coordinator/ota_coordinator.h>
+
+// 1. Implement the project-specific peer coordination.
+class MyOtaHost : public ungula::ota::CoordinatorHost {
+public:
+    bool hasConnectedPeers() override          { return myNodes.anyConnected(); }
+    void sendOtaStartToPeers() override         { acks_.reset(); myNodes.broadcastOtaStart(); }
+    bool allPeersAcked() override               { return acks_.allConnectedAcked(); }
+    bool allPeersUpdated() override             { return myNodes.allBackOnline(); }
+    const char* currentFirmwareVersion() override { return FW_VERSION; }
+    void onAck(NodeId n) { acks_.mark(n); }     // call from your transport rx
+private:
+    AckTracker acks_;
+};
+
+// 2. Wire it once (updater is your configured OtaUpdater).
+MyOtaHost host;
+ungula::ota::OtaCoordinator coord(updater, host);
+coord.setCallbacks(
+    [](int step, int total, ungula::ota::OtaStep which) { ui_show_step(step, total, which); },
+    [](bool ok, ungula::ota::OtaResultKind kind, const char* detail) { ui_show_result(ok, kind, detail); });
+
+// 3. Drive it.
+coord.start();                       // caller ensures connectivity first
+// every loop while active:
+coord.loop(now_ms());
+if (coord.phase() == ungula::ota::CoordinatorPhase::UpdatingMain)
+    ui_progress(coord.downloadPercent());
+```
+
+`OtaStep` (`NotifyingPeers`, `SkippingPeers`, `WaitingPeers`, `Checking`,
+`Downloading`) and `OtaResultKind` (`UpToDate`, `Installed`, `Failed`) are the
+enums passed to the callbacks. `CoordinatorPhase` is the FSM state. See `API.md`
+for the full surface.
+
 ## OtaStatus Codes
 
 | Status | Meaning |

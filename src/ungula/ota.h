@@ -15,3 +15,6 @@
 #include "ungula/ota/core/ota_types.h"
 #include "ungula/ota/core/ota_updater.h"
 #include "ungula/ota/core/ota_version.h"
+
+// Multi-node update coordinator (ESP32 only — uses a FreeRTOS task)
+#include "ungula/ota/coordinator/ota_coordinator.h"

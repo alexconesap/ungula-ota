@@ -213,6 +213,45 @@ targets.
 
 ---
 
+### Use case: Multi-node update (controller + peers)
+
+`OtaUpdater` updates one device. `OtaCoordinator`
+(`ungula/ota/coordinator/ota_coordinator.h`, **ESP32 only**) drives the sequence
+*notify peers → wait for peers → update MAIN → reboot* across a controller and
+its peer nodes. It owns the FSM + the MAIN update + the FreeRTOS download task,
+and delegates the project-specific peer bits to a `CoordinatorHost`. It has **no
+node-protocol and no UI/i18n dependency** — steps/results are reported as enums
+the host maps to display text.
+
+```cpp
+#include <ungula/ota/coordinator/ota_coordinator.h>
+
+class MyHost : public ungula::ota::CoordinatorHost {
+    bool hasConnectedPeers() override            { return /* peers online? */; }
+    void sendOtaStartToPeers() override          { /* reset acks + broadcast start */ }
+    bool allPeersAcked() override                { return /* all connected peers acked? */; }
+    bool allPeersUpdated() override              { return /* all peers updated + reconnected? */; }
+    const char* currentFirmwareVersion() override { return FW_VERSION; }
+};
+
+MyHost host;
+ungula::ota::OtaCoordinator coord(updater, host);   // updater = configured OtaUpdater
+coord.setCallbacks(onStep, onResult);               // optional
+coord.start();                                       // caller ensures connectivity
+// each loop while active:
+coord.loop(now_ms);
+```
+
+LLM rules:
+
+- The coordinator never sends to peers itself — implement `CoordinatorHost`.
+- Reset your ack tracking inside `sendOtaStartToPeers()`.
+- Map `OtaStep` / `OtaResultKind` to UI strings in the host — do not expect the
+  coordinator to produce text.
+- ESP32 only (FreeRTOS task for the download).
+
+---
+
 ## API
 
 Header layout under `lib_ota/src/`:
@@ -320,6 +359,43 @@ Parses two `x.y.z` strings via `sscanf`. Returns `1` if remote is newer,
 
 Backward-compatible aliases also exist: `HttpOtaSource`,
 `IdfHttpOtaSource`, `IdfSdOtaSource`, `Esp32FirmwareWriter`.
+
+### Coordinator (`ungula/ota/coordinator/ota_coordinator.h`, ESP32 only)
+
+`enum class CoordinatorPhase` — `Idle`, `SendingStart`, `WaitingStartAcks`,
+`WaitingPeers`, `UpdatingMain`, `Complete`, `Failed`. `coordinatorPhaseToString()`
+gives a token for logging.
+
+`enum class OtaStep` — `NotifyingPeers`, `SkippingPeers`, `WaitingPeers`,
+`Checking`, `Downloading` (passed to the step callback; host maps to UI text).
+`enum class OtaResultKind` — `UpToDate`, `Installed`, `Failed`.
+
+`using OtaStepCallback = void(*)(int step, int total, OtaStep)`,
+`using OtaResultCallback = void(*)(bool success, OtaResultKind, const char* detail)`
+(`detail` is the error text when `Failed`, else `nullptr`). `OTA_TOTAL_STEPS == 4`.
+
+`class CoordinatorHost` (abstract) — implement the project peer coordination:
+
+| Method | Contract |
+| --- | --- |
+| `bool hasConnectedPeers()` | Any peers to update first? If none, the sequence skips straight to MAIN. |
+| `void sendOtaStartToPeers()` | Fan out the OTA-start command; reset your ack tracking here. |
+| `bool allPeersAcked()` | Have all connected peers acked the start command? |
+| `bool allPeersUpdated()` | Have all connected peers finished + reconnected? |
+| `const char* currentFirmwareVersion()` | MAIN firmware version for the update check. |
+
+`class OtaCoordinator`:
+
+| Method | Notes |
+| --- | --- |
+| `OtaCoordinator(OtaUpdater&, CoordinatorHost&)` | References must outlive the coordinator. |
+| `void setCallbacks(OtaStepCallback, OtaResultCallback)` | Optional progress/result. |
+| `bool start()` | Begin the sequence; `false` if already active. Caller ensures connectivity first. |
+| `void loop(uint32_t now_ms)` | Tick every loop iteration while active. |
+| `CoordinatorPhase phase() const` / `bool isActive() const` | FSM state. |
+| `bool updateApplied() const` | True once MAIN flashed (reboot pending). |
+| `int downloadPercent() const` | 0–100 during `UpdatingMain`. |
+| `const char* statusMessage() const` | Last status / error line. |
 
 ---
 
