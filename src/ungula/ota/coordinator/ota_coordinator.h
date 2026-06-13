@@ -24,6 +24,7 @@
 #include <cstdint>
 
 #include "ungula/ota/core/ota_updater.h"
+#include "ungula/core/time/time.h"
 
 namespace ungula::ota
 {
@@ -104,7 +105,7 @@ class OtaCoordinator
         bool start();
 
         /// Tick every loop iteration while a sequence is active.
-        void loop(uint32_t now_ms);
+        void loop(ungula::core::time::tick_ms_t now_ms);
 
         CoordinatorPhase phase() const
         {

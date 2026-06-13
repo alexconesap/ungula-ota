@@ -69,13 +69,13 @@ bool OtaCoordinator::start()
         return true;
 }
 
-void OtaCoordinator::loop(uint32_t now_ms)
+void OtaCoordinator::loop(ungula::core::time::tick_ms_t now_ms)
 {
         if (!isActive()) {
                 return;
         }
 
-        uint32_t elapsed = now_ms - phase_start_ms_;
+        ungula::core::time::tick_ms_t elapsed = now_ms - phase_start_ms_;
 
         switch (phase_) {
         case CoordinatorPhase::WaitingStartAcks:
@@ -91,7 +91,8 @@ void OtaCoordinator::loop(uint32_t now_ms)
                 break;
 
         case CoordinatorPhase::WaitingPeers:
-                if ((host_.allPeersUpdated() && elapsed > PEER_SETTLE_MS) || elapsed > PEER_UPDATE_TIMEOUT_MS) {
+                if ((host_.allPeersUpdated() && elapsed > PEER_SETTLE_MS) ||
+                    elapsed > PEER_UPDATE_TIMEOUT_MS) {
                         log_info("OTA: peers ready (or timed out), proceeding to MAIN update");
                         startUpdateTask();
                 }
@@ -134,7 +135,8 @@ void OtaCoordinator::startUpdateTask()
 
         if (checkResult != OtaStatus::Ok) {
                 char buf[80];
-                snprintf(buf, sizeof(buf), "Update check failed: %s", otaStatusToString(checkResult));
+                snprintf(buf, sizeof(buf), "Update check failed: %s",
+                         otaStatusToString(checkResult));
                 fail(buf);
                 return;
         }
@@ -171,7 +173,8 @@ void OtaCoordinator::otaTaskFunc(void *param)
                         static int lastLoggedPct = -1;
                         if ((percent / 10) != (lastLoggedPct / 10)) {
                                 lastLoggedPct = percent;
-                                log_info("OTA: %d%% (%u / %u bytes)", percent, static_cast<unsigned>(data.bytesWritten),
+                                log_info("OTA: %d%% (%u / %u bytes)", percent,
+                                         static_cast<unsigned>(data.bytesWritten),
                                          static_cast<unsigned>(data.totalBytes));
                         }
                 }
@@ -193,7 +196,8 @@ void OtaCoordinator::otaTaskFunc(void *param)
 
 void OtaCoordinator::advancePhase(CoordinatorPhase next)
 {
-        log_info("OTA: phase %s -> %s", coordinatorPhaseToString(phase_), coordinatorPhaseToString(next));
+        log_info("OTA: phase %s -> %s", coordinatorPhaseToString(phase_),
+                 coordinatorPhaseToString(next));
         phase_ = next;
         phase_start_ms_ = ungula::core::time::millis();
 }
