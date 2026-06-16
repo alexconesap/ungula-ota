@@ -111,6 +111,19 @@ void OtaCoordinator::loop(ungula::core::time::tick_ms_t now_ms)
                                 fail(ota_task_error_);
                         }
                         ota_task_handle_ = nullptr;
+                } else if (download_percent_ != last_progress_pct_) {
+                        // Progress moved — reset the stall timer.
+                        last_progress_pct_ = download_percent_;
+                        last_progress_ms_ = now_ms;
+                } else if (now_ms - last_progress_ms_ > MAIN_STALL_TIMEOUT_MS) {
+                        // No progress for too long: the download task is wedged. Kill
+                        // it so a hung transfer can't pin isActive() until a reboot.
+                        log_error("OTA: MAIN download stalled (%d%%), aborting", download_percent_);
+                        if (ota_task_handle_ != nullptr) {
+                                vTaskDelete(static_cast<TaskHandle_t>(ota_task_handle_));
+                                ota_task_handle_ = nullptr;
+                        }
+                        fail("MAIN update stalled");
                 }
                 break;
 
@@ -147,6 +160,8 @@ void OtaCoordinator::startUpdateTask()
         setStatus("Downloading firmware...");
 
         download_percent_ = 0;
+        last_progress_pct_ = -1;
+        last_progress_ms_ = ungula::core::time::millis();
         ota_task_done_ = false;
         ota_task_success_ = false;
         ota_task_error_[0] = '\0';

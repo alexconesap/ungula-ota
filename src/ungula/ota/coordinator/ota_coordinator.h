@@ -138,6 +138,12 @@ class OtaCoordinator
         char status_msg_[80] = {};
 
         volatile int download_percent_ = 0;
+        // Stall watchdog for the MAIN download: the percent must keep advancing.
+        // If it sits still past MAIN_STALL_TIMEOUT_MS the transfer is wedged
+        // (network/TLS stall) and the sequence is aborted — otherwise the FSM
+        // would pin isActive() forever and block every later OTA until a reboot.
+        int last_progress_pct_ = -1;
+        ungula::core::time::tick_ms_t last_progress_ms_ = 0;
         void *ota_task_handle_ = nullptr; // FreeRTOS TaskHandle_t (opaque here)
         volatile bool ota_task_done_ = false;
         volatile bool ota_task_success_ = false;
@@ -150,6 +156,10 @@ class OtaCoordinator
         static constexpr uint32_t PEER_UPDATE_TIMEOUT_MS = 30000;
         static constexpr uint32_t PEER_SETTLE_MS = 5000;
         static constexpr uint32_t OTA_TASK_STACK_SIZE = 16384;
+        // Max time the MAIN download may go without the percent advancing before
+        // it's treated as wedged. Stall-based (not total-time) so a slow but
+        // healthy transfer is never killed.
+        static constexpr uint32_t MAIN_STALL_TIMEOUT_MS = 30000;
 
         void advancePhase(CoordinatorPhase next);
         void setStatus(const char *msg);
