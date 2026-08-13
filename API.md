@@ -246,6 +246,15 @@ LLM rules:
 
 - The coordinator never sends to peers itself — implement `CoordinatorHost`.
 - Reset your ack tracking inside `sendOtaStartToPeers()`.
+- `start()` and `loop()` are **not** fully non-blocking: the remote version
+  check (`OtaUpdater::checkForUpdate`) runs inline in the caller's context
+  before the download task is spawned. Only the download itself moves to
+  the FreeRTOS task. Budget for a multi-second stall on the ticking task.
+- Timeouts are fixed, not configurable: 5 s for peer ACKs, 30 s for peers
+  to update, 5 s settle, and a 30 s **stall** watchdog on the MAIN download
+  (it fires only when `downloadPercent()` stops advancing, so a slow but
+  healthy transfer is never killed). On a stall the download task is
+  deleted and the sequence reports `Failed`.
 - Map `OtaStep` / `OtaResultKind` to UI strings in the host — do not expect the
   coordinator to produce text.
 - ESP32 only (FreeRTOS task for the download).
@@ -395,8 +404,8 @@ gives a token for logging.
 | --- | --- |
 | `OtaCoordinator(OtaUpdater&, CoordinatorHost&)` | References must outlive the coordinator. |
 | `void setCallbacks(OtaStepCallback, OtaResultCallback)` | Optional progress/result. |
-| `bool start()` | Begin the sequence; `false` if already active. Caller ensures connectivity first. |
-| `void loop(uint32_t now_ms)` | Tick every loop iteration while active. |
+| `bool start()` | Begin the sequence; `false` if already active. Caller ensures connectivity first. **Blocking:** when no peers are connected, `start()` runs the remote version check inline (an HTTP GET, up to ~30 s on a dead network) before returning. |
+| `void loop(ungula::core::time::tick_ms_t now_ms)` | Tick every loop iteration while active. `tick_ms_t` is `int64_t` — pass `ungula::core::time::millis()`. **Blocking:** the transition out of `WaitingPeers` also runs the version check inline. |
 | `CoordinatorPhase phase() const` / `bool isActive() const` | FSM state. |
 | `bool updateApplied() const` | True once MAIN flashed (reboot pending). |
 | `int downloadPercent() const` | 0–100 during `UpdatingMain`. |
@@ -434,10 +443,18 @@ Required ordering:
    `writer.begin()` lazily on the first chunk, using that size — passing
    `0` would force the writer into unknown-size mode and break finalize
    on ESP32.
-3. On any mid-stream failure (`StreamFailed`, `WriteFailed`,
-   `BeginFailed`), the updater calls `writer.abort()` automatically.
-   Custom writers must release resources there.
-4. On `Ok` with `autoReboot=true`, control does not return — the device
+3. `writer.abort()` is called **only when `begin()` already succeeded**.
+   Because `begin()` is lazy (first chunk), a `StreamFailed` that happens
+   before any data arrives, and every `BeginFailed`, leave the writer
+   untouched — no `abort()` call. Custom writers must therefore not rely
+   on `abort()` to undo a failed `begin()`; clean up inside `begin()`
+   itself.
+4. `FinalizeFailed` does **not** trigger `abort()` either. The updater
+   returns after `end()` returns false and does nothing else. On the ESP32
+   writer that is safe (`esp_ota_end()` releases the handle itself), but a
+   custom writer must release its own resources inside `end()` on the
+   failure path.
+5. On `Ok` with `autoReboot=true`, control does not return — the device
    reboots ~500 ms later via `ungula::core::system::SystemControl::rebootAfterMs`.
 
 Source and writer are not owned by `OtaUpdater`. Keep them alive (static
@@ -455,16 +472,36 @@ Recovery patterns:
 - `NoSource` / `NoWriter`: programmer error. Fix wiring at boot.
 - `FetchVersionFailed`, `StreamFailed`: transient. Retry later. Network
   / SD reachability issue.
-- `VersionParseFailed`: server delivered an empty `version.txt`. Treat
-  as configuration bug.
-- `BeginFailed`: usually no free OTA slot or partition table mismatch.
-  Not retryable without operator action.
+- `VersionParseFailed`: server delivered an **empty** `version.txt`. Treat
+  as configuration bug. Note this is the only parse error reported: a
+  non-empty but malformed string (an HTML error page, `"latest"`, ...)
+  parses as `0.0.0` and comes back as `NoUpdate`, not as an error.
+- `BeginFailed`: usually no free OTA slot, partition table mismatch, or an
+  image larger than the target partition. Not retryable without operator
+  action. `abort()` is not called (the session never opened).
 - `WriteFailed`: flash hardware fault or out-of-space mid-write. Writer
   has been aborted — safe to retry the whole flow.
-- `FinalizeFailed`: image arrived but failed signature/CRC checks.
-  Image is rejected; current firmware keeps running. Retry to re-download.
+- `FinalizeFailed`: `end()` rejected the image (ESP-IDF image validation
+  failed) or setting the boot partition failed. Current firmware keeps
+  running. Retry to re-download.
 
 Use `otaStatusToString(status)` to log the outcome.
+
+### Update safety — what is and is not covered
+
+- The boot partition is switched only after `end()` succeeds, so a
+  truncated download or a power cut mid-write never produces an
+  unbootable device: the old image stays selected.
+- There is **no application-level signature or checksum verification**.
+  The only check is the ESP-IDF image validation inside `esp_ota_end()`.
+  Do not treat a plain-HTTP source as trusted; prefer `EspHttpOtaSource`
+  (HTTPS + IDF CA bundle) and enable Secure Boot when the network is not
+  trusted.
+- The library never calls `esp_ota_mark_app_valid_cancel_rollback()`. On
+  builds with `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE`, the host
+  application must call it after the new image comes up healthy,
+  otherwise the device rolls back at the next reboot.
+- No resume: a failed transfer restarts from byte 0.
 
 ---
 

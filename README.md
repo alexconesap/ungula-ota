@@ -44,26 +44,30 @@ Concrete adapters use ESP-IDF APIs directly: `esp_http_client` for HTTP, POSIX f
 
 ```text
 lib_ota/src/
-  ungula_ota.h              Umbrella header (triggers path discovery for Arduino .ino projects)
-  ota/
-    core/                       Platform-independent interfaces and logic
-      ota_types.h               OtaStatus enum, OtaProgressCallback, otaStatusToString()
-      i_ota_source.h            IOtaSource interface (function pointer callback)
-      i_firmware_writer.h       IFirmwareWriter interface
-      ota_version.h             Semantic version comparison (inline)
-      ota_updater.h             OtaUpdater facade
-      ota_updater.cpp           OtaUpdater implementation
-    sources/                    Firmware source adapters
-      http/
-        esp_idf_http_ota_source.h/.cpp     ESP-IDF esp_http_client (legacy path)
-        esp/
-          http_ota_source.h/.cpp           ESP-IDF esp_http_client (active, primary)
-      sd/
-        esp_idf_sd_ota_source.h/.cpp       ESP-IDF POSIX file I/O via VFS
-    writers/                    Flash writer adapters
-      esp32/
-        idf/
-          esp32_idf_firmware_writer.h/.cpp       ESP-IDF esp_ota_ops.h
+  ungula_ota.h                Flat forwarder for Arduino CLI discovery
+  ungula/
+    ota.h                     Umbrella header (include this one)
+    ota/
+      core/                       Platform-independent interfaces and logic
+        ota_types.h               OtaStatus, OtaProgressCallbackData, OtaProgressCallback, otaStatusToString()
+        i_ota_source.h            IOtaSource interface + OtaDataCallback
+        i_firmware_writer.h       IFirmwareWriter interface
+        ota_version.h             Semantic version comparison (inline)
+        ota_updater.h             OtaUpdater facade
+        ota_updater.cpp           OtaUpdater implementation
+      sources/                    Firmware source adapters
+        http/
+          esp_idf_http_ota_source.h/.cpp   ESP-IDF esp_http_client (legacy path)
+          esp/
+            http_ota_source.h/.cpp         ESP-IDF esp_http_client (active, primary)
+        sd/
+          esp_idf_sd_ota_source.h/.cpp     ESP-IDF POSIX file I/O via VFS
+      writers/                    Flash writer adapters
+        esp32/
+          idf/
+            esp32_idf_firmware_writer.h/.cpp   ESP-IDF esp_ota_ops.h
+      coordinator/
+        ota_coordinator.h/.cpp    Multi-node update FSM (ESP32 only)
 ```
 
 ## Stack Size Requirement
@@ -151,15 +155,18 @@ Track download progress. The callback fires for every 4 KB chunk written to flas
 #include <ungula/ota.h>
 #include <emblogx/logger.h>
 
-updater.setProgressCallback([](size_t bytesWritten, size_t totalBytes) {
-    if (totalBytes > 0) {
-        int percent = static_cast<int>((bytesWritten * 100) / totalBytes);
+// The callback takes ONE argument: OtaProgressCallbackData.
+// It is a plain C function pointer, so only non-capturing lambdas
+// and free functions convert.
+updater.setProgressCallback([](OtaProgressCallbackData data) {
+    if (data.totalBytes > 0) {
+        int percent = static_cast<int>((data.bytesWritten * 100) / data.totalBytes);
         static int lastPct = -1;
         if ((percent / 10) != (lastPct / 10)) {
             lastPct = percent;
             log_info("OTA: download %d%% (%u / %u bytes)", percent,
-                     static_cast<unsigned>(bytesWritten),
-                     static_cast<unsigned>(totalBytes));
+                     static_cast<unsigned>(data.bytesWritten),
+                     static_cast<unsigned>(data.totalBytes));
         }
     }
 });
@@ -340,9 +347,37 @@ if (coord.isActive()) coord.loop(now_ms);
 | `BeginFailed` | Flash writer could not start |
 | `StreamFailed` | Download broke mid-transfer |
 | `WriteFailed` | Flash writer rejected a chunk |
-| `FinalizeFailed` | end() returned false (corrupt image) |
+| `FinalizeFailed` | end() returned false (corrupt image, or setting the boot partition failed) |
 
 Use `otaStatusToString(status)` for logging.
+
+## What the update does and does not guarantee
+
+Guaranteed by the ESP32 writer:
+
+- The boot partition is switched **only after** `esp_ota_end()` accepts the
+  image. A power cut, a broken download or a rejected image leaves the running
+  firmware untouched — the half-written OTA slot is never booted.
+- `esp_ota_begin()` refuses an image larger than the target partition, so an
+  oversized binary fails at `BeginFailed` instead of overflowing.
+
+**Not** provided — handle it in the host project if you need it:
+
+- **No signature or checksum check of your own.** The only validation is the
+  ESP-IDF image check inside `esp_ota_end()`. Any server that can answer
+  `{baseUrl}/{binFilename}` can flash the device. Use HTTPS
+  (`EspHttpOtaSource`, which attaches the IDF CA bundle) and enable ESP-IDF
+  Secure Boot / flash encryption if the update path is not trusted.
+- **No rollback confirmation.** If you build with
+  `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE`, the new image boots in
+  `PENDING_VERIFY` and the application must call
+  `esp_ota_mark_app_valid_cancel_rollback()` once it considers itself healthy.
+  The library never calls it — do it from your own startup code, or the device
+  reverts on the next reboot.
+- **No resume.** A failed download restarts from byte 0.
+- **No version downgrade path.** `compareVersions()` only accepts a strictly
+  newer `x.y.z`; a malformed `version.txt` parses as `0.0.0` and reports
+  `NoUpdate` rather than an error.
 
 ## Compilation Guards
 
@@ -433,7 +468,7 @@ Thanks to Claude and ChatGPT for helping on generating this documentation.
 
 ## License
 
-MIT License — see [LICENSE](license.txt) file.
+MIT License — see [LICENSE](LICENSE) file.
 
 ---
 
