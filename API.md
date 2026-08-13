@@ -30,10 +30,12 @@ new transports or targets plug in without changing the core flow.
 
 ### LLM rules
 
-- Use only symbols and include paths documented in this file; do not infer extra public API from implementation files.
-- Prefer the use-case patterns here over ad-hoc rewrites; keep dependency wiring and lifecycle order identical unless the task explicitly changes API design.
-- Treat headers under `detail/`, `platform/`, and `platforms/` as internal unless this document calls them out as public.
-- If required behavior is missing from the documented API, report the gap explicitly instead of inventing new public symbols.
+- Prefer the use-case-level API (`OtaUpdater::performUpdate`) over driving `IOtaSource` and `IFirmwareWriter` by hand, and keep the lifecycle order documented below.
+- The progress callback signature is `void(OtaProgressCallbackData)`, not `void(size_t, size_t)`. Do not use the older two-argument form.
+- New adapters must implement the `IOtaSource` / `IFirmwareWriter` contracts exactly: make `getFirmwareSize()` valid before the first stream callback, and clean up inside `begin()` / `end()` — `abort()` is not called on every failure path.
+- Do not depend on the streaming context (`StreamCtx`, `streamCallback`); it is private.
+- Do not call Arduino `Update` / `HTTPUpdate` APIs alongside this library.
+- Preserve the terminology this API uses: source, writer, stream, begin/end, finalize, status.
 
 
 ## Usage
@@ -242,7 +244,7 @@ coord.start();                                       // caller ensures connectiv
 coord.loop(now_ms);
 ```
 
-LLM rules:
+Coordinator rules:
 
 - The coordinator never sends to peers itself — implement `CoordinatorHost`.
 - Reset your ack tracking inside `sendOtaStartToPeers()`.
@@ -532,27 +534,3 @@ Use `otaStatusToString(status)` to log the outcome.
 | `streamCallback` (in `ota_updater.cpp`) | The function-pointer trampoline used by the updater itself. |
 | `Esp32IdfFirmwareWriter::handle_`, `partition_` | ESP-IDF handle state — do not touch. |
 | Private members of `EspHttpOtaSource` / `EspIdfSdOtaSource` (`baseUrl_`, `binFilename_`, `firmwareSize_`) | Construction-time configuration only. |
-| `log_error(...)` calls inside `ota_updater.cpp` | Carry-over EmblogX dependency; treated as tolerated debt per project rules. Do not extend logging usage in new adapters. |
-| Direct calls to `esp_http_client`, `esp_ota_ops`, POSIX FS in adapters | Encapsulated by the adapter — call the adapter, not the SDK. |
-
----
-
-## LLM usage rules
-
-- Use only the documented public API unless explicitly modifying the
-  library.
-- Prefer the use-case-level API (`OtaUpdater::performUpdate`) over
-  driving `IOtaSource` and `IFirmwareWriter` by hand.
-- Don't read implementation files to figure out usage — if it's not
-  here, it's not public.
-- Don't depend on the function-pointer streaming context (`StreamCtx`,
-  `streamCallback`) — they are private.
-- The progress callback signature is
-  `void(OtaProgressCallbackData)`, not `void(size_t, size_t)`. Do not
-  use the older two-argument form.
-- New adapters must implement the `IOtaSource` / `IFirmwareWriter`
-  contracts exactly — including setting `getFirmwareSize()` before the
-  first stream callback and supporting `abort()` correctly.
-- Do not call Arduino `Update`/`HTTPUpdate` APIs alongside this library.
-- Preserve the terminology this API uses: source, writer, stream,
-  begin/end, finalize, status.
