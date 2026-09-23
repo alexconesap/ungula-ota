@@ -86,6 +86,14 @@ class CoordinatorHost
 
         /// The current MAIN firmware version string (for the update check).
         virtual const char *currentFirmwareVersion() = 0;
+
+        /// Called once at the start of every update sequence, before any peer
+        /// is contacted or anything is downloaded — the host's last chance to
+        /// save what the new firmware might not be able to read. Must not block
+        /// for long and must not fail the update. Default: nothing.
+        virtual void beforeUpdate()
+        {
+        }
 };
 
 class OtaCoordinator

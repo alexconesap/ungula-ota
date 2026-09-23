@@ -55,6 +55,7 @@ bool OtaCoordinator::start()
 
         update_applied_ = false;
         log_info("OTA: starting update sequence");
+        host_.beforeUpdate();
 
         if (!host_.hasConnectedPeers()) {
                 log_info("OTA: no peers connected, skipping their update");
